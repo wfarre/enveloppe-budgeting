@@ -105,6 +105,38 @@ app.delete("/envelopes/:id", (req, res, next) => {
   }
 });
 
+app.put("/envelopes/transfer/:from/:to", (req, res, next) => {
+  const fromId = req.params.from;
+  const toId = req.params.to;
+  const transferredMoney = req.body.transferredMoney;
+
+  const indexFrom = envelopes.findIndex((env) => env.id === fromId);
+  const indexTo = envelopes.findIndex((env) => env.id === toId);
+  if (!(indexFrom > -1)) {
+    res
+      .status(404)
+      .send(`can't find the "from" envelop with the id: ${fromId}`);
+  }
+  if (!(indexTo > -1)) {
+    res.status(404).send(`can't find the "to" envelop with the id: ${toId}`);
+  }
+
+  if (transferredMoney > envelopes[indexFrom].balance) {
+    res.status(400).send("Balance can't be 0");
+  }
+
+  envelopes[indexFrom] = {
+    ...envelopes[indexFrom],
+    balance: envelopes[indexFrom].balance - transferredMoney,
+  };
+  envelopes[indexTo] = {
+    ...envelopes[indexTo],
+    balance: envelopes[indexTo].balance + transferredMoney,
+  };
+
+  res.status(201).send({ data: envelopes[indexTo] });
+});
+
 app.listen(PORT, () => {
   console.log(`The server is listening on port ${PORT}`);
 });
