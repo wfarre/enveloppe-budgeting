@@ -34,3 +34,5 @@ Nodemon is installed (if you to play with the server), you can run the server us
 ```
 npm run start
 ```
+
+The server will start on http://localhost:4001 .

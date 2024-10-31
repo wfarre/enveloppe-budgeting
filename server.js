@@ -1,7 +1,12 @@
 const express = require("express");
 let { envelopes } = require("./envelopes");
 const bodyParser = require("body-parser");
-const { checkIfEnvelopeIsValid } = require("./utils");
+const {
+  checkIfEnvelopeIsValid,
+  transferMoney,
+  updateEnvelope,
+  createNewEnvelope,
+} = require("./utils");
 const app = express();
 
 const PORT = process.env.PORT || 4001;
@@ -33,18 +38,10 @@ app.get("/envelopes/:id", (req, res, next) => {
 });
 
 app.post("/envelopes", (req, res, next) => {
-  console.log(req.body);
-
   const newEnvelopIsValid = checkIfEnvelopeIsValid(req.body);
   if (newEnvelopIsValid) {
-    const newEnvelope = {
-      id: `${envelopes.length + 1}`,
-      category: req.body.category,
-      monthlyBudget: req.body.monthlyBudget,
-      balance: req.body.balance || 0,
-    };
-    envelopes.push(newEnvelope);
-    res.status(201).send(newEnvelope);
+    const createdData = createNewEnvelope(req.body);
+    res.status(201).send(createdData);
   } else {
     res.status(404).send("Not found");
   }
@@ -54,19 +51,10 @@ app.put("/envelopes/:id", (req, res, next) => {
   const id = req.params.id;
   const body = req.body;
   const index = envelopes.findIndex((env) => env.id === id);
-  let foundEnvelope = envelopes.find((env) => env.id === id);
 
-  if (index > -1 && foundEnvelope) {
-    foundEnvelope = {
-      id: id,
-      category: body.category ? body.category : foundEnvelope.category,
-      monthlyBudget: body.monthlyBudget
-        ? body.monthlyBudget
-        : foundEnvelope.monthlyBudget,
-      balance: body.balance ? body.balance : foundEnvelope.balance,
-    };
-    envelopes[index] = foundEnvelope;
-    res.status(201).send({ data: foundEnvelope });
+  if (index > -1) {
+    updateEnvelope(index, body);
+    res.status(201).send({ data: envelopes[index] });
   } else {
     res.status(404).send();
   }
@@ -87,7 +75,7 @@ app.delete("/envelopes/:id", (req, res, next) => {
 app.put("/envelopes/transfer/:from/:to", (req, res, next) => {
   const fromId = req.params.from;
   const toId = req.params.to;
-  const transferredMoney = req.body.transferredMoney;
+  const transferedMoney = req.body.transferedMoney;
   const indexFrom = envelopes.findIndex((env) => env.id === fromId);
   const indexTo = envelopes.findIndex((env) => env.id === toId);
 
@@ -100,19 +88,10 @@ app.put("/envelopes/transfer/:from/:to", (req, res, next) => {
     res.status(404).send(`can't find the "to" envelop with the id: ${toId}`);
   }
 
-  if (transferredMoney > envelopes[indexFrom].balance) {
+  if (transferedMoney > envelopes[indexFrom].balance) {
     res.status(400).send("Balance can't be 0");
   }
-
-  envelopes[indexFrom] = {
-    ...envelopes[indexFrom],
-    balance: envelopes[indexFrom].balance - transferredMoney,
-  };
-  envelopes[indexTo] = {
-    ...envelopes[indexTo],
-    balance: envelopes[indexTo].balance + transferredMoney,
-  };
-
+  transferMoney(indexFrom, indexTo, transferedMoney);
   res.status(201).send({ data: envelopes[indexTo] });
 });
 
