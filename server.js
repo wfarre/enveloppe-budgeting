@@ -1,34 +1,13 @@
 const express = require("express");
 let { envelopes } = require("./envelopes");
 const bodyParser = require("body-parser");
+const { checkIfEnvelopeIsValid } = require("./utils");
 const app = express();
 
 const PORT = process.env.PORT || 4001;
 
 app.use(bodyParser.urlencoded());
-
 app.use(bodyParser.json());
-
-const checkIfEnvelopeIsValid = (envelope) => {
-  if (!envelope.category || typeof envelope.category !== "string") {
-    throw new Error("Category cannot be empty or be a number.");
-  }
-  if (
-    !envelope.monthlyBudget ||
-    typeof envelope.monthlyBudget !== "number" ||
-    envelope.monthlyBudget === 0
-  ) {
-    throw new Error("MonthlyBudget cannot be equal to 0");
-  }
-  return true;
-};
-
-const envelope = {
-  id: 0,
-  category: "Gas",
-  monthlyBudget: 0,
-  balance: 0,
-};
 
 app.get("/", (req, res, next) => {
   res.send("Hello world!");
@@ -109,9 +88,9 @@ app.put("/envelopes/transfer/:from/:to", (req, res, next) => {
   const fromId = req.params.from;
   const toId = req.params.to;
   const transferredMoney = req.body.transferredMoney;
-
   const indexFrom = envelopes.findIndex((env) => env.id === fromId);
   const indexTo = envelopes.findIndex((env) => env.id === toId);
+
   if (!(indexFrom > -1)) {
     res
       .status(404)
